@@ -52,6 +52,40 @@ qt5_add_dbus_interface(SRC ../dbusservice/com.deepin.Home.Daemon.xml homeDaemonP
 # daemon 的 xml 描述文件生成： qdbuscpp2xml "src/main/homeDaemon.h" "-o" "src/dbusservice/com.deepin.Home.Daemon.xml"
 qt5_add_dbus_adaptor(DAEMON_SRC ../dbusservice/com.deepin.Home.Daemon.xml homeDaemon.h HomeDaemon homeDaemonAdaptor HomeDaemonAdaptor)
 
+find_package(Qt5QuickControls2 CONFIG REQUIRED)
+find_package(Corrosion QUIET)
+if(NOT Corrosion_FOUND)
+    include(FetchContent)
+    FetchContent_Declare(
+        Corrosion
+        GIT_REPOSITORY https://github.com/corrosion-rs/corrosion.git
+        GIT_TAG v0.3.1
+    )
+
+    FetchContent_MakeAvailable(Corrosion)
+endif()
+set(CRATE qml-minimal)
+# Corrosion creates a CMake target with the same name as the crate.
+corrosion_import_crate(MANIFEST_PATH ../rust/Cargo.toml CRATES ${CRATE})
+
+set(CXXQT_EXPORT_DIR "${CMAKE_CURRENT_BINARY_DIR}/cxxqt")
+corrosion_set_env_vars(${CRATE}
+    "CXXQT_EXPORT_DIR=${CXXQT_EXPORT_DIR}"
+)
+
+add_library(${APP_NAME}_lib INTERFACE)
+target_include_directories(${APP_NAME}_lib INTERFACE "${CXXQT_EXPORT_DIR}/${CRATE}")
+
+target_link_libraries(${APP_NAME}_lib INTERFACE
+    # WHOLE_ARCHIVE is needed for the generated QML plugin to register on startup,
+    # otherwise the linker will discard the static variables that initialize it.
+    "$<LINK_LIBRARY:WHOLE_ARCHIVE,${CRATE}-static>"
+    Qt::Core
+    Qt::Gui
+    Qt::Qml
+    Qt::QuickControls2
+)
+
 # Add Client EXE
 add_executable(${APP_NAME} ${SRC})
 # Add Daemon Exec
@@ -62,6 +96,7 @@ target_link_libraries(${APP_NAME}
     Qt5::Quick
     Qt5::DBus
     ${DtkDeclarative_LIBRARIES}
+    ${APP_NAME}_lib
     )
 target_link_libraries(${APP_DAEMON_NAME}
     Qt5::Core
