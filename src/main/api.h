@@ -89,6 +89,9 @@ public:
     QString getForumURL(QString server, QString code);
     QString getClientToken(QString server, QString code);
     LoginInfo getLoginInfo(QString server, QString token);
+    QNetworkAccessManager *getHttpClient() {
+        return m_http;
+    }
 };
 
 #endif // DEEPIN_HOME_API_H

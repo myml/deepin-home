@@ -22,6 +22,9 @@
 #include <QTimer>
 #include <QUuid>
 
+#include "../../3rdparty/apiserver/client/OAIClientApi.h"
+using namespace OpenAPI;
+
 class HomeDaemon : public QObject
 {
     Q_OBJECT
@@ -44,7 +47,9 @@ private:
     QMenu *m_menu = nullptr;
     API *m_api = nullptr;
     Account *m_account = nullptr;
+    OAIClientApi *m_client = nullptr;
 
+    void onAPIError(OAIHttpRequestWorker *worker, QNetworkReply::NetworkError error_type, QString error_str);
 public:
     explicit HomeDaemon(QObject *parent = nullptr);
     ~HomeDaemon();

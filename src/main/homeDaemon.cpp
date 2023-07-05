@@ -9,6 +9,17 @@ HomeDaemon::HomeDaemon(QObject *parent)
 {
     // 网络请求
     m_api = new API(this);
+    m_client = new OAIClientApi();
+    m_client->setNetworkAccessManager(m_api->getHttpClient());
+    m_client->setNewServerForAllOperations(QUrl("https://home.deepin.org/api/v1/1"), "");
+    
+    connect(m_client, &OAIClientApi::publicLoginInfoGetSignalEFull, this, onAPIError);
+    connect(m_client, &OAIClientApi::publicChannelChannelIdTopicNMessagesGetSignalEFull, this, onAPIError);
+
+    connect(m_client, &OAIClientApi::publicLoginInfoGetSignal, [](OAIHandlers_ClientConfigResponse summary) {
+        qDebug() << summary.getClientId() << summary.getRedirectUrl() << summary.getScopes();
+    });
+    m_client->publicChannelChannelIdTopicNMessagesGet();
 
     // 初始化系统托盘
     m_menu = new QMenu();
@@ -33,6 +44,12 @@ HomeDaemon::HomeDaemon(QObject *parent)
 HomeDaemon::~HomeDaemon()
 {
     delete m_menu;
+    delete m_client;
+}
+
+void HomeDaemon::onAPIError(OAIHttpRequestWorker *worker, QNetworkReply::NetworkError error_type, QString error_str)
+{
+    qWarning() << "http api error:" << error_type << error_str;
 }
 
 void HomeDaemon::runTimeRecord()
