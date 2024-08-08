@@ -1,0 +1,6 @@
+#!/bin/sh
+
+rm /etc/skel/Desktop/deepin-home.desktop
+rm /etc/skel/Desktop/deepin-home-daemon.desktop
+rm /etc/xdg/autostart/deepin-home.desktop
+rm /etc/xdg/autostart/deepin-home-daemon.desktop
